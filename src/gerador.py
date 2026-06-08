@@ -1,142 +1,141 @@
 class Gerador:
     def __init__(self):
-        self.code = []
-        self.indent_level = 0
+        self.codigo = []
+        self.nivel_indentacao = 0
 
-    def add_line(self, line):
-        if line.strip() == "":
-            self.code.append("")
+    def adicionar_linha(self, linha):
+        if linha.strip() == "":
+            self.codigo.append("")
         else:
-            self.code.append("    " * self.indent_level + line)
+            self.codigo.append("    " * self.nivel_indentacao + linha)
 
     def transpile(self, ast):
-        # Base functions
-        self.add_line("def ligar(namedevice):")
-        self.indent_level += 1
-        self.add_line('print(f"{namedevice} ligado!")')
-        self.add_line('return 1')
-        self.indent_level -= 1
-        self.add_line("")
+        # Funções base pedidas no enunciado
+        self.adicionar_linha("def ligar(namedevice):")
+        self.nivel_indentacao += 1
+        self.adicionar_linha('print(f"{namedevice} ligado!")')
+        self.adicionar_linha('return 1')
+        self.nivel_indentacao -= 1
+        self.adicionar_linha("")
 
-        self.add_line("def desligar(namedevice):")
-        self.indent_level += 1
-        self.add_line('print(f"{namedevice} desligado!")')
-        self.add_line('return 0')
-        self.indent_level -= 1
-        self.add_line("")
+        self.adicionar_linha("def desligar(namedevice):")
+        self.nivel_indentacao += 1
+        self.adicionar_linha('print(f"{namedevice} desligado!")')
+        self.adicionar_linha('return 0')
+        self.nivel_indentacao -= 1
+        self.adicionar_linha("")
 
-        self.add_line("def verificar(namedevice):")
-        self.indent_level += 1
-        self.add_line('print(f"{namedevice} está ligado.")')
-        self.add_line('return 1 # Pode ser 0 dependendo da lógica')
-        self.indent_level -= 1
-        self.add_line("")
+        self.adicionar_linha("def verificar(namedevice):")
+        self.nivel_indentacao += 1
+        self.adicionar_linha('print(f"{namedevice} está ligado.")')
+        self.adicionar_linha('return 1 # Pode ser 0 dependendo da lógica')
+        self.nivel_indentacao -= 1
+        self.adicionar_linha("")
 
-        self.add_line("def alerta(namedevice, msg, var=None):")
-        self.indent_level += 1
-        self.add_line('print(f"{namedevice} recebeu o alerta:\\n")')
-        self.add_line('if var is not None:')
-        self.add_line('    print(f"{msg} {var}")')
-        self.add_line('else:')
-        self.add_line('    print(msg)')
-        self.indent_level -= 1
-        self.add_line("")
+        self.adicionar_linha("def alerta(namedevice, msg, var=None):")
+        self.nivel_indentacao += 1
+        self.adicionar_linha('print(f"{namedevice} recebeu o alerta:\\n")')
+        self.adicionar_linha('if var is not None:')
+        self.adicionar_linha('    print(f"{msg} {var}")')
+        self.adicionar_linha('else:')
+        self.adicionar_linha('    print(msg)')
+        self.nivel_indentacao -= 1
+        self.adicionar_linha("")
 
-        # Parse AST: ('program', devices, cmds)
-        if not ast or ast[0] != 'program':
+        # Parse AST: ('programa', dispositivos, comandos)
+        if not ast or ast[0] != 'programa':
             return ""
 
-        devices = ast[1]
-        cmds = ast[2]
+        dispositivos = ast[1]
+        comandos = ast[2]
 
-        observations = set()
-        for dev in devices:
-            if dev[2]: # has observation
-                observations.add(dev[2])
+        observacoes = set()
+        for disp in dispositivos:
+            if disp[2]: # se tem variável de observação
+                observacoes.add(disp[2])
 
-        # Initialize observations to 0
-        if observations:
-            for obs in observations:
-                self.add_line(f"{obs} = 0")
-            self.add_line("")
+        # Inicializa observações com 0 (regra 1.4 do enunciado)
+        if observacoes:
+            for obs in observacoes:
+                self.adicionar_linha(f"{obs} = 0")
+            self.adicionar_linha("")
 
-        self.visit_cmds(cmds)
+        self.visitar_comandos(comandos)
 
-        return "\n".join(self.code)
+        return "\n".join(self.codigo)
 
-    def visit_cmds(self, cmds):
-        for cmd in cmds:
+    def visitar_comandos(self, comandos):
+        for cmd in comandos:
             if cmd is None:
                 continue
-            self.visit_cmd(cmd)
+            self.visitar_comando(cmd)
 
-    def visit_cmd(self, cmd):
-        ctype = cmd[0]
-        if ctype == 'attrib':
-            # ('attrib', obs, var)
-            val = self.visit_var(cmd[2])
-            self.add_line(f"{cmd[1]} = {val}")
-        elif ctype == 'attrib_exec':
-            # ('attrib_exec', obs, act_exec)
-            val = self.visit_act_exec(cmd[2])
-            self.add_line(f"{cmd[1]} = {val}")
-        elif ctype == 'attrib_tuple':
-            # ('attrib_tuple', dev, obs, var)
-            val = self.visit_var(cmd[3])
-            # Em Python, se atribuirmos para o dev e para a observação (como diz no exemplo 4)
-            # Mas o dev é só uma string identificadora. Vamos atribuir apenas a observação:
-            self.add_line(f"{cmd[2]} = {val} # ignorando {cmd[1]}")
-        elif ctype == 'if':
-            # ('if', obs_cond, cmds1, cmds2)
-            cond = self.visit_obs(cmd[1])
-            self.add_line(f"if {cond}:")
-            self.indent_level += 1
+    def visitar_comando(self, cmd):
+        tipo_comando = cmd[0]
+        if tipo_comando == 'atribuicao':
+            # ('atribuicao', observacao, variavel)
+            valor = self.visitar_variavel(cmd[2])
+            self.adicionar_linha(f"{cmd[1]} = {valor}")
+        elif tipo_comando == 'atribuicao_exec':
+            # ('atribuicao_exec', observacao, acao_exec)
+            valor = self.visitar_acao_exec(cmd[2])
+            self.adicionar_linha(f"{cmd[1]} = {valor}")
+        elif tipo_comando == 'atribuicao_tupla':
+            # ('atribuicao_tupla', dispositivo, observacao, variavel)
+            valor = self.visitar_variavel(cmd[3])
+            # Em Python vamos atribuir apenas a observação da tupla
+            self.adicionar_linha(f"{cmd[2]} = {valor} # ignorando o nome do dispositivo {cmd[1]}")
+        elif tipo_comando == 'se_entao':
+            # ('se_entao', condicao, cmds_entao, cmds_senao)
+            cond = self.visitar_observacao(cmd[1])
+            self.adicionar_linha(f"if {cond}:")
+            self.nivel_indentacao += 1
             if cmd[2]:
-                self.visit_cmds(cmd[2])
+                self.visitar_comandos(cmd[2])
             else:
-                self.add_line("pass")
-            self.indent_level -= 1
+                self.adicionar_linha("pass")
+            self.nivel_indentacao -= 1
 
             if len(cmd) > 3 and cmd[3]:
-                self.add_line("else:")
-                self.indent_level += 1
-                self.visit_cmds(cmd[3])
-                self.indent_level -= 1
-        elif ctype == 'act_exec':
-            val = self.visit_act_exec(cmd)
-            self.add_line(val)
-        elif ctype == 'act_alert':
-            # ('act_alert', msg, observation, devices)
+                self.adicionar_linha("else:")
+                self.nivel_indentacao += 1
+                self.visitar_comandos(cmd[3])
+                self.nivel_indentacao -= 1
+        elif tipo_comando == 'acao_executar':
+            valor = self.visitar_acao_exec(cmd)
+            self.adicionar_linha(valor)
+        elif tipo_comando == 'acao_alerta':
+            # ('acao_alerta', msg, observacao, lista_dispositivos)
             msg = cmd[1]
             obs = cmd[2]
-            devices = cmd[3]
-            for dev in devices:
+            lista_disp = cmd[3]
+            for disp in lista_disp:
                 if obs:
-                    self.add_line(f"alerta('{dev}', '{msg}', {obs})")
+                    self.adicionar_linha(f"alerta('{disp}', '{msg}', {obs})")
                 else:
-                    self.add_line(f"alerta('{dev}', '{msg}')")
+                    self.adicionar_linha(f"alerta('{disp}', '{msg}')")
 
-    def visit_var(self, var):
-        if var[0] == 'num':
+    def visitar_variavel(self, var):
+        if var[0] == 'numero':
             return str(var[1])
-        elif var[0] == 'bool':
+        elif var[0] == 'booleano':
             return "True" if var[1] else "False"
 
-    def visit_obs(self, obs):
-        if obs[0] == 'obs':
-            # ('obs', obs_name, op, var)
-            val = self.visit_var(obs[3])
-            return f"{obs[1]} {obs[2]} {val}"
-        elif obs[0] == 'obs_exec':
-            # ('obs_exec', act_exec, op, var)
-            exec_str = self.visit_act_exec(obs[1])
-            val = self.visit_var(obs[3])
-            return f"{exec_str} {obs[2]} {val}"
-        elif obs[0] == 'obs_and':
-            left = self.visit_obs(obs[1])
-            right = self.visit_obs(obs[2])
-            return f"({left}) and ({right})"
+    def visitar_observacao(self, obs):
+        if obs[0] == 'observacao':
+            # ('observacao', nome_obs, operador, variavel)
+            valor = self.visitar_variavel(obs[3])
+            return f"{obs[1]} {obs[2]} {valor}"
+        elif obs[0] == 'obs_execucao':
+            # ('obs_execucao', acao_exec, operador, variavel)
+            str_exec = self.visitar_acao_exec(obs[1])
+            valor = self.visitar_variavel(obs[3])
+            return f"{str_exec} {obs[2]} {valor}"
+        elif obs[0] == 'obs_e':
+            esquerda = self.visitar_observacao(obs[1])
+            direita = self.visitar_observacao(obs[2])
+            return f"({esquerda}) and ({direita})"
 
-    def visit_act_exec(self, cmd):
-        # ('act_exec', action, namedevice)
+    def visitar_acao_exec(self, cmd):
+        # ('acao_executar', acao, dispositivo)
         return f"{cmd[1]}('{cmd[2]}')"

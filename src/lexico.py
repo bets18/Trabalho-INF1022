@@ -1,7 +1,7 @@
 import ply.lex as lex
 
-# Reserved words dictionary
-reserved = {
+# Dicionário de palavras reservadas
+reservadas = {
     'dispositivo': 'DISPOSITIVO',
     'set': 'SET',
     'se': 'SE',
@@ -16,15 +16,15 @@ reserved = {
     'todos': 'TODOS'
 }
 
-# List of tokens
+# Lista de tokens
 tokens = [
     'DOISPONTOS', 'LBRACE', 'RBRACE', 'LPAREN', 'RPAREN',
     'COMMA', 'DOT', 'EQUALS', 'AND',
     'GT', 'LT', 'GE', 'LE', 'EQ', 'NE',
     'ID', 'NUM', 'MSG', 'BOOL'
-] + list(reserved.values())
+] + list(reservadas.values())
 
-# Simple tokens
+# Tokens simples
 t_DOISPONTOS = r':'
 t_LBRACE     = r'\{'
 t_RBRACE     = r'\}'
@@ -35,7 +35,7 @@ t_DOT        = r'\.'
 t_EQUALS     = r'='
 t_AND        = r'&&'
 
-# Relational operators
+# Operadores relacionais
 t_EQ = r'=='
 t_NE = r'!='
 t_GE = r'>='
@@ -43,41 +43,42 @@ t_LE = r'<='
 t_GT = r'>'
 t_LT = r'<'
 
-# String messages (e.g. " mensagem ")
+# Mensagens de texto (ex: " mensagem ")
 def t_MSG(t):
     r'\"([^\\\n]|(\\.))*?\"'
-    # Remove the quotes
+    # Remove as aspas da string lida
     t.value = t.value[1:-1]
     return t
 
-# Identifiers and reserved words
+# Identificadores e palavras reservadas
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     if t.value in ('True', 'False'):
         t.type = 'BOOL'
         t.value = True if t.value == 'True' else False
     else:
-        t.type = reserved.get(t.value, 'ID')    # Check for reserved words
+        # Checa se é uma palavra reservada, senão é um ID normal (como nome de dispositivo)
+        t.type = reservadas.get(t.value, 'ID')    
     return t
 
-# Numbers (inteiros não negativos)
+# Números (inteiros não negativos)
 def t_NUM(t):
     r'\d+'
     t.value = int(t.value)
     return t
 
-# Track line numbers
+# Controla o número das linhas
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
-# Ignore spaces and tabs
+# Ignora espaços e tabs
 t_ignore  = ' \t\r'
 
-# Error handling
+# Tratamento de erros
 def t_error(t):
     print(f"Caractere ilegal '{t.value[0]}' na linha {t.lineno}")
     t.lexer.skip(1)
 
-# Build the lexer
+# Constrói o lexer
 lexer = lex.lex()

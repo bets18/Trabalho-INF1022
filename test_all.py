@@ -3,27 +3,27 @@ import subprocess
 import glob
 import sys
 
-def run_tests():
-    test_files = glob.glob(os.path.join('testes', '*.txt'))
-    test_files.sort()
+def rodar_testes():
+    arquivos_teste = glob.glob(os.path.join('testes', '*.txt'))
+    arquivos_teste.sort()
     
-    success = True
-    for test in test_files:
+    sucesso = True
+    for teste in arquivos_teste:
         print(f"\n======================================")
-        print(f"Executando teste: {test}")
+        print(f"Executando teste: {teste}")
         print(f"======================================")
         
-        result = subprocess.run([sys.executable, 'src/main.py', test], capture_output=True, text=True)
-        print(result.stdout)
+        resultado = subprocess.run([sys.executable, 'src/main.py', teste], capture_output=True, text=True)
+        print(resultado.stdout)
         
-        if result.returncode != 0 or 'Erro' in result.stdout or 'Caractere ilegal' in result.stdout:
-            print(f">>> TESTE FALHOU: {test}")
-            success = False
+        if resultado.returncode != 0 or 'Erro' in resultado.stdout or 'Caractere ilegal' in resultado.stdout:
+            print(f">>> TESTE FALHOU: {teste}")
+            sucesso = False
             
-    if success:
+    if sucesso:
         print("\n>>> TODOS OS TESTES PASSARAM COM SUCESSO!")
     else:
         print("\n>>> ALGUNS TESTES FALHARAM!")
 
 if __name__ == '__main__':
-    run_tests()
+    rodar_testes()
