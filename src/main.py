@@ -4,8 +4,9 @@ import os
 # Adiciona o diretório atual ao path para importação correta
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from lexer import lexer
-from parser import parser
+from lexico import lexer
+from sintatico import parser
+from gerador import Gerador
 
 def main():
     # Verifica se o usuário passou um arquivo como argumento
@@ -27,9 +28,26 @@ def main():
         # Executa o analisador sintático, que por sua vez chama o léxico
         ast = parser.parse(data, lexer=lexer)
         
-        print("\nÁrvore Sintática Abstrata (AST) Gerada:")
-        print(ast)
-        
+        if ast:
+            print("\nÁrvore Sintática Abstrata (AST) Gerada:")
+            print(ast)
+            
+            gerador = Gerador()
+            python_code = gerador.transpile(ast)
+            
+            output_file = filepath.replace('.txt', '.py')
+            if output_file == filepath:
+                output_file += '.py'
+                
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(python_code)
+                
+            print(f"\nCódigo transpilado salvo em: {output_file}")
+            print("\n--- Código Python Gerado ---")
+            print(python_code)
+        else:
+            print("\nErro durante o parsing. AST não foi gerada.")
+            
     else:
         print("Modo de uso: python src/main.py <caminho_do_arquivo.txt>")
         print("Por favor, crie um arquivo com seu código ObsAct e passe como argumento.")
