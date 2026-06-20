@@ -1,0 +1,40 @@
+dispositivo: {Sensor_Fumaca, fumaca}
+dispositivo: {Ar_Condicionado, temperatura}
+dispositivo: {Sistema, cinema}
+dispositivo: {Sistema, dormir}
+dispositivo: {Luz_Sala}
+dispositivo: {Cortina}
+dispositivo: {Celular}
+dispositivo: {TV}
+dispositivo: {Alexa}
+
+set fumaca = 0.
+set temperatura = 28.
+set cinema = 1.
+set dormir = 0.
+
+verificar Luz_Sala.
+
+se fumaca == 1 entao
+    enviar alerta ("Perigo de incendio", fumaca) Celular.
+    enviar alerta ("Evacuar imediatamente") para todos: TV, Celular, Luz_Sala.
+.
+
+se temperatura > 25 entao
+    ligar Ar_Condicionado.
+.
+
+se cinema == 1 && fumaca == 0 entao
+    fechar Cortina.
+    ligar TV.
+    desligar Luz_Sala.
+    enviar alerta ("Alexa, ligar aura!") Alexa.
+senao
+    desligar TV.
+.
+
+se dormir == 1 entao
+    agendar Celular 07:00.
+    fechar Cortina.
+    desligar Luz_Sala.
+.
