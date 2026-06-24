@@ -13,11 +13,13 @@ int main() {
     int temperatura = 0;
     int cinema = 0;
     int dormir = 0;
+    int ativado = 0;
 
     fumaca = 0;
     temperatura = 28;
     cinema = 1;
     dormir = 0;
+    ativado = 1;
     verificar("Luz_Sala");
     if (fumaca == 1) {
         alerta_var("Celular", "Perigo de incendio", fumaca);
@@ -40,6 +42,11 @@ int main() {
         agendar("Celular", "07:00");
         fechar("Cortina");
         desligar("Luz_Sala");
+    }
+    if (ativado == 1 && temperatura <= 30 && fumaca != 1) {
+        alerta_msg("Celular", "Casa trancada e segura");
+    } else {
+        verificar("Alarme_Seguranca");
     }
     return 0;
 }

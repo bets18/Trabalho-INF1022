@@ -7,11 +7,13 @@ dispositivo: {Cortina}
 dispositivo: {Celular}
 dispositivo: {TV}
 dispositivo: {Alexa}
+dispositivo: {Alarme_Seguranca, ativado}
 
 set fumaca = 0.
 set temperatura = 28.
 set cinema = 1.
 set dormir = 0.
+set ativado = True.
 
 verificar Luz_Sala.
 
@@ -37,4 +39,10 @@ se dormir == 1 entao
     agendar Celular 07:00.
     fechar Cortina.
     desligar Luz_Sala.
+.
+
+se ativado == True && temperatura <= 30 && fumaca != 1 entao
+    enviar alerta ("Casa trancada e segura") Celular.
+senao
+    verificar Alarme_Seguranca.
 .
