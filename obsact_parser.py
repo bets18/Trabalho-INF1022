@@ -2,53 +2,51 @@ from sly import Parser
 from obsact_lexer import ObsActLexer
 
 class ObsActParser(Parser):
-    # Associando os tokens definidos no Lexer para que o Parser possa usá-los
+    # O Parser é a segunda etapa: ele pega a lista de tokens do Lexer e cria a Árvore Sintática (AST).
+    # Associando os tokens definidos no Lexer para que o Parser conheça as "pecinhas".
     tokens = ObsActLexer.tokens
 
-    # program : devices cmds
+    # A regra principal (program). Um programa é feito de dispositivos seguidos de comandos.
     @_('devices cmds')
     def program(self, p):
-        # A Árvore Sintática Abstrata (AST) começa aqui.
-        # Retornamos uma tupla cujo primeiro elemento é o nome do nó ('program')
-        # seguido pelas ramificações que contêm a lista de dispositivos e os comandos.
+        # Aqui a gente começa a montar a Árvore Sintática Abstrata (AST).
+        # Retornamos uma tupla: o tipo do nó ('program') e seus "filhos" (a lista de devices e a lista de cmds)
         return ('program', p.devices, p.cmds)
 
-    # devices : device devices | device
+    # Regra para ler um bloco de dispositivos. Como pode ter mais de um, a gente usa recursividade.
     @_('device devices')
     def devices(self, p):
-        # Regra recursiva: agrupa o dispositivo atual com o resto da lista de dispositivos
+        # Junta o dispositivo atual com o resto da lista que foi processada
         return [p.device] + p.devices
 
     @_('device')
     def devices(self, p):
-        # Caso base da recursão: retorna apenas uma lista com o primeiro dispositivo
+        # Caso base da recursão: se tiver só um dispositivo, retorna uma lista com ele
         return [p.device]
 
-    # device : DISPOSITIVO DOISPONTOS ACHAVES ID FCHAVES
+    # Regra pra definir um dispositivo simples. Ex: dispositivo: { Luz }
     @_('DISPOSITIVO DOISPONTOS ACHAVES ID FCHAVES')
     def device(self, p):
-        # Retorna o nó 'device' com um único ID associado
+        # Retorna o nó 'device' passando o ID do dispositivo
         return ('device', p.ID)
 
-    # device : DISPOSITIVO DOISPONTOS ACHAVES ID VIRGULA ID FCHAVES
+    # Regra pra dispositivo que contém uma variável. Ex: dispositivo: { Termometro, temperatura }
     @_('DISPOSITIVO DOISPONTOS ACHAVES ID VIRGULA ID FCHAVES')
     def device(self, p):
-        # Quando há elementos repetidos no SLY (como o ID aqui), ele os indexa 
-        # automaticamente, podendo ser acessados por p.ID0, p.ID1, etc.
+        # Quando a regra tem mais de um mesmo token (no caso, dois IDs), 
+        # o SLY os indexa automaticamente para a gente conseguir pegar o valor de cada um.
         return ('device', p.ID0, p.ID1)
 
-    # cmds : cmd PONTO cmds | cmd PONTO
+    # Regra para processar múltiplos comandos. Mesma lógica de recursividade dos devices.
     @_('cmd PONTO cmds')
     def cmds(self, p):
-        # Adiciona o comando atual na lista com os próximos comandos
         return [p.cmd] + p.cmds
 
     @_('cmd PONTO')
     def cmds(self, p):
-        # Caso base da lista de comandos
         return [p.cmd]
 
-    # cmd : attrib | obsact | act
+    # Um comando genérico (cmd) pode ser uma atribuição, uma verificação condicional (obsact) ou uma ação direta (act)
     @_('attrib')
     def cmd(self, p):
         return p.attrib
@@ -61,50 +59,51 @@ class ObsActParser(Parser):
     def cmd(self, p):
         return p.act
 
-    # attrib : SET ID IGUAL var
+    # Atribuição. Ex: set temperatura = 30
     @_('SET ID IGUAL var')
     def attrib(self, p):
-        # Nó da AST de atribuição (ex: set temp = 30)
+        # Retorna nó 'attrib' com o ID da variável e o valor novo
         return ('attrib', p.ID, p.var)
 
-    # obsact : SE obs ENTAO cmds | SE obs ENTAO cmds SENAO cmds
+    # Estruturas condicionais (se / senao)
     @_('SE obs ENTAO cmds')
     def obsact(self, p):
-        # Estrutura condicional simples (if)
+        # Condicional simples (tipo if do C)
         return ('if', p.obs, p.cmds)
 
     @_('SE obs ENTAO cmds SENAO cmds')
     def obsact(self, p):
-        # Condicional completa (if/else). SLY indexa 'cmds' como cmds0 (no ENTÃO) e cmds1 (no SENÃO).
+        # Condicional completa (tipo if/else). 
+        # Novamente, o SLY indexa 'cmds' como p.cmds0 (bloco do ENTÃO) e p.cmds1 (bloco do SENÃO).
         return ('if_else', p.obs, p.cmds0, p.cmds1)
 
-    # obs : ID oplogic var | ID oplogic var E_LOGICO obs
+    # Condição que é verificada dentro do "se". Ex: temperatura > 30
     @_('ID oplogic var')
     def obs(self, p):
-        # Nó de condição de observação simples
+        # Nó de condição simples
         return ('condition', p.ID, p.oplogic, p.var)
 
     @_('ID oplogic var E_LOGICO obs')
     def obs(self, p):
-        # Nó de condição composta com o E LÓGICO (&&)
+        # Nó de condição composta com o operador E LÓGICO (&&)
         return ('condition_and', p.ID, p.oplogic, p.var, p.obs)
 
-    # var : NUM | TRUE | FALSE
+    # Regras para os tipos de valores (var) que as variáveis podem assumir
     @_('NUM')
     def var(self, p):
-        # Retorna o tipo de valor numérico.
         return ('num', p.NUM)
 
     @_('TRUE')
     def var(self, p):
-        # Retorna o valor booleano puro (convertido do léxico)
+        # Passa o booleano de verdade pro Python
         return ('bool', True)
 
     @_('FALSE')
     def var(self, p):
         return ('bool', False)
 
-    # EXPANSÃO DA GRAMÁTICA: BROADCAST
+    # EXPANSÃO DA GRAMÁTICA: BROADCAST (Enviando pra vários)
+    # Lista de dispositivos separada por vírgula
     @_('ID VIRGULA lista_devices')
     def lista_devices(self, p):
         return [p.ID] + p.lista_devices
@@ -113,21 +112,21 @@ class ObsActParser(Parser):
     def lista_devices(self, p):
         return [p.ID]
 
-    # act : action ID | ENVIAR ALERTA APARENTESES MSG FPARENTESES ID | ENVIAR ALERTA APARENTESES MSG VIRGULA ID FPARENTESES ID
+    # Regras para as Ações (act)
     @_('action ID')
     def act(self, p):
-        # Uma ação em um dispositivo, como 'ligar luz'
+        # Ação direta simples num dispositivo. Ex: ligar Luz
         return ('act', p.action, p.ID)
 
     @_('ENVIAR ALERTA APARENTESES MSG FPARENTESES ID')
     def act(self, p):
-        # Ação para enviar alerta contendo só texto para um determinado destinatário (ID)
+        # Enviar alerta de texto puro pra um dispositivo específico
         return ('alert', p.MSG, p.ID)
 
     @_('ENVIAR ALERTA APARENTESES MSG VIRGULA ID FPARENTESES ID')
     def act(self, p):
-        # Alerta contendo uma variável extra dentro do alerta. 
-        # O SLY indexa os IDs: ID0 (variável a ser avaliada), ID1 (destinatário final)
+        # Enviar alerta que mostra também o valor de uma variável.
+        # ID0 é a variável e ID1 é quem vai receber a mensagem.
         return ('alert_var', p.MSG, p.ID0, p.ID1)
 
     # EXPANSÃO DA GRAMÁTICA: BROADCAST
@@ -135,12 +134,12 @@ class ObsActParser(Parser):
     def act(self, p):
         return ('alert_broadcast', p.MSG, p.lista_devices)
 
-    # FEATURE EXTRA: Adicionando ação de agendar com HORA
+    # FEATURE EXTRA: Agendamento usando a HORA exata (hh:mm)
     @_('AGENDAR ID HORA')
     def act(self, p):
         return ('agendar', p.ID, p.HORA)
 
-    # action : LIGAR | DESLIGAR | VERIFICAR
+    # Define quais as palavras equivalem às ações simples (para simplificar o act lá de cima)
     @_('LIGAR')
     def action(self, p):
         return 'ligar'
@@ -153,12 +152,12 @@ class ObsActParser(Parser):
     def action(self, p):
         return 'verificar'
 
-    # FEATURE EXTRA: Adicionando ação de FECHAR
+    # FEATURE EXTRA: Adicionando ação de FECHAR (como para fechar porta/cortina)
     @_('FECHAR')
     def action(self, p):
         return 'fechar'
 
-    # oplogic : MAIOR | MENOR | MAIORIGUAL | MENORIGUAL | IGUALIGUAL | DIFERENTE
+    # Tradução dos operadores lógicos para a nossa AST e posterior código C
     @_('MAIOR')
     def oplogic(self, p):
         return '>'
